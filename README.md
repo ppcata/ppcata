@@ -4183,4 +4183,1402 @@ if __name__ == "__main__":
     box.volume(5)
 
     box.battery_status()
+
+
+SV88
+
+Kotlin: Sa se creeze un program Kotlin care va utiliza subclase active ( cu mutex si lock) pentru procesarea simultana a unui hasmap bazata. Clsa de baza va stabili operatiile ( de ex adunare, scadere, inmultire sau impartire) iar subclasele vor pune la dispozitie obiecte care se executa in fire separate. Se va prezenta diagrama de clase si de obiecte. Se va explica maniera de aplicare a principiilor SOLID.
+
+Python: Utilizand fabrica de fabrici sa se creeze un program Python care va afisa in functie de apel in mod graficc un patrat un dreptunghi sau un cerc. Se vor desena diagrama de clase si de obiecte. Se va explica maniera de aplicare a principiilor SOLID.
+
+1. 
+
+package com.pp.laborator
+
+// Importăm corutinele: runBlocking, launch, join
+import kotlinx.coroutines.*
+
+// Importăm Mutex-ul
+import kotlinx.coroutines.sync.Mutex
+
+// Importăm funcția withLock
+import kotlinx.coroutines.sync.withLock
+
+
+// CLASA DE BAZĂ
+// Este abstractă, deci NU putem crea obiect direct din ea.
+// Ea există doar ca model pentru clasele: AdunareOp, ScadereOp etc.
+abstract class HashMapOp(
+    // HashMap-ul este comun pentru toate operațiile.
+    // protected = poate fi folosit în această clasă și în subclase.
+    protected val hashMap: HashMap<Int, Int>,
+
+    // Mutex-ul este folosit ca să protejăm accesul la HashMap.
+    protected val mutex: Mutex
+) {
+    // Aici fiecare operație își salvează rezultatul.
+    var rezultat: Int = 0
+
+    // Metodă abstractă.
+    // Fiecare subclasă este obligată să o implementeze.
+    // suspend = metoda poate fi apelată dintr-o corutină.
+    abstract suspend fun executa()
+}
+
+
+// SUBCLASA PENTRU ADUNARE
+class AdunareOp(
+    // Aici NU punem val/protected.
+    // Sunt doar parametri primiți și trimiși mai departe la clasa de bază.
+    hashMap: HashMap<Int, Int>,
+    mutex: Mutex
+) : HashMapOp(hashMap, mutex) {
+
+    // Implementăm metoda cerută de clasa abstractă.
+    override suspend fun executa() {
+
+        // withLock blochează mutex-ul.
+        // În acest bloc intră o singură corutină la un moment dat.
+        mutex.withLock {
+            var suma = 0
+
+            // Parcurgem toate perechile din HashMap.
+            for (element in hashMap) {
+                // element.value este valoarea din HashMap.
+                suma += element.value
+            }
+
+            // Salvăm rezultatul final.
+            rezultat = suma
+        }
+    }
+}
+
+
+// SUBCLASA PENTRU ÎNMULȚIRE
+class InmultireOp(
+    hashMap: HashMap<Int, Int>,
+    mutex: Mutex
+) : HashMapOp(hashMap, mutex) {
+
+    override suspend fun executa() {
+        mutex.withLock {
+            var produs = 1
+
+            for (element in hashMap) {
+                produs *= element.value
+            }
+
+            rezultat = produs
+        }
+    }
+}
+
+
+// SUBCLASA PENTRU SCĂDERE
+class ScadereOp(
+    hashMap: HashMap<Int, Int>,
+    mutex: Mutex
+) : HashMapOp(hashMap, mutex) {
+
+    override suspend fun executa() {
+        mutex.withLock {
+            var diferenta = 0
+
+            for (element in hashMap) {
+                diferenta -= element.value
+            }
+
+            rezultat = diferenta
+        }
+    }
+}
+
+
+// SUBCLASA PENTRU ÎMPĂRȚIRE
+class ImpartireOp(
+    hashMap: HashMap<Int, Int>,
+    mutex: Mutex
+) : HashMapOp(hashMap, mutex) {
+
+    override suspend fun executa() {
+        mutex.withLock {
+            var impartire = 100
+
+            for (element in hashMap) {
+                // Verificăm să nu împărțim la 0.
+                if (element.value != 0) {
+                    impartire /= element.value
+                }
+            }
+
+            rezultat = impartire
+        }
+    }
+}
+
+
+fun main() = runBlocking {
+
+    // Creăm HashMap-ul.
+    // Avem chei: 1, 2, 3
+    // Avem valori: 2, 3, 4
+    val hashMap = hashMapOf(
+        1 to 2,
+        2 to 3,
+        3 to 4
+    )
+
+    // Creăm un singur Mutex.
+    // Același mutex va fi folosit de toate operațiile.
+    val mutex = Mutex()
+
+    // Creăm obiectele pentru fiecare operație.
+    val adunare = AdunareOp(hashMap, mutex)
+    val inmultire = InmultireOp(hashMap, mutex)
+    val scadere = ScadereOp(hashMap, mutex)
+    val impartire = ImpartireOp(hashMap, mutex)
+
+    // Pornim corutina pentru adunare.
+    val job1 = launch {
+        adunare.executa()
+    }
+
+    // Pornim corutina pentru înmulțire.
+    val job2 = launch {
+        inmultire.executa()
+    }
+
+    // Pornim corutina pentru scădere.
+    val job3 = launch {
+        scadere.executa()
+    }
+
+    // Pornim corutina pentru împărțire.
+    val job4 = launch {
+        impartire.executa()
+    }
+
+    // Așteptăm să termine toate corutinele.
+    job1.join()
+    job2.join()
+    job3.join()
+    job4.join()
+
+    // Afișăm rezultatele.
+    println("Rezultat adunare: ${adunare.rezultat}")
+    println("Rezultat inmultire: ${inmultire.rezultat}")
+    println("Rezultat scadere: ${scadere.rezultat}")
+    println("Rezultat impartire: ${impartire.rezultat}")
+}
+
+
+2.
+
+
+
+from tkinter import *
+
+
+# Clasa de baza pentru toate formele
+class Shape:
+    def draw(self, canvas: Canvas):
+        raise NotImplementedError("Metoda draw trebuie implementata")
+
+
+# Forma concreta: cerc
+class Circle(Shape):
+    def draw(self, canvas: Canvas):
+        canvas.create_oval(50, 50, 150, 150, fill="red", outline="black", width=2)
+
+
+# Forma concreta: patrat
+class Square(Shape):
+    def draw(self, canvas: Canvas):
+        canvas.create_rectangle(50, 50, 150, 150, fill="green", outline="black", width=2)
+
+
+# Forma concreta: dreptunghi
+class Rectangle(Shape):
+    def draw(self, canvas: Canvas):
+        canvas.create_rectangle(50, 70, 220, 140, fill="blue", outline="black", width=2)
+
+
+# Fabrica abstracta
+class AbstractFactory:
+    def getShape(self, shape_type: str) -> Shape:
+        raise NotImplementedError("Metoda getShape trebuie implementata")
+
+
+# Fabrica pentru forme rotunde
+class RoundFactory(AbstractFactory):
+    def getShape(self, shape_type: str) -> Shape:
+        if shape_type == "circle":
+            return Circle()
+
+
+# Fabrica pentru forme cu colturi
+class PolygonFactory(AbstractFactory):
+    def getShape(self, shape_type: str) -> Shape:
+        if shape_type == "square":
+            return Square()
+        elif shape_type == "rectangle":
+            return Rectangle()
+
+
+# Fabrica de fabrici
+class FactoryFactory:
+    def getFactory(self, factory_name: str) -> AbstractFactory:
+        if factory_name == "round":
+            return RoundFactory()
+        elif factory_name == "polygon":
+            return PolygonFactory()
+
+
+def main():
+    root = Tk()
+    root.title("Fabrica de fabrici - forme")
+    root.geometry("300x250")
+
+    canvas = Canvas(root, width=260, height=200, bg="white")
+    canvas.pack()
+
+    factory_factory = FactoryFactory()
+
+    # Aici alegem fabrica
+    polygon_factory = factory_factory.getFactory("polygon")
+    round_factory = factory_factory.getFactory("round")
+
+    # Aici alegem formele
+    patrat = polygon_factory.getShape("square")
+    dreptunghi = polygon_factory.getShape("rectangle")
+    cerc = round_factory.getShape("circle")
+
+    # Desenam formele
+    patrat.draw(canvas)
+    dreptunghi.draw(canvas)
+    cerc.draw(canvas)
+
+    root.mainloop()
+
+
+if __name__ == "__main__":
+    main()
+
+
+SV 81
+
+Kotlin: Utilizand modelul adaptor sa se freeze un program Kotlin care va primi la intrare diverse tipuri de date simple sau de tip colectie si va realiza scrierea lor intr-un fisier ca o singura operatie care primeste doar obiectul si nume fisier. Se vor desena diagrama de clase si de obiecte. Se va explica maniera de aplicare a principiilor SOLID.
+
+
+Python: Utilizand modelul comanda sa se scrie in Python un program care pornind de la o clasa student va asigura posibilitatea unor comenzi specifice unui obiect colega care sa conduca la schimbarea starii interne a unui obiect student ( de ex din fericit in disperat). Se vor desena diagrama da clase si de obiecte. Se va explica maniera de aplicare a principiilor SOLID.
+
+
+1.
+
+package org.example
+
+interface Target
+{
+    fun write(data:Any?, filename:String)
+
+}
+
+class FileWriterAdapter: Target {
+    override fun write(data: Any?, filename: String) {
+
+        val file = java.io.File(filename)
+        val out = file.bufferedWriter()
+        when (data) {
+            is String -> out.write(data)
+
+            is Int -> out.write(data.toString())
+
+            is Double -> out.write(data.toString())
+            is Boolean -> out.write(data.toString())
+            is List<*> -> data.forEach { out.write(it.toString() + "\n") }
+            is Set<*> -> data.forEach {
+                out.write(it.toString() + "\n")
+            }
+
+            is Map<*, *> -> data.forEach { out.write(it.toString() + "\n") }
+            else -> out.write("unsupported type")
+        }
+        out.close()
+    }
+}
+
+//clientul primeste un obiect care implementeaza interfata Target
+//primeste adaptorul si il foloseste
+class Client(private val adapter: Target)
+{
+    fun process(data:Any?, filename:String)
+    {
+        adapter.write(data,filename)
+    }
+}
+
+fun main() {
+    val adapter = FileWriterAdapter()
+    val client = Client(adapter)
+
+    client.process("hello", "string.txt")
+    client.process(123, "int.txt")
+    client.process(3.14, "double.txt")
+    client.process(true, "boolean.txt")
+    client.process(listOf("apple", "banana", "cherry"), "lista.txt")
+    client.process(mapOf("mere" to 5, "pere" to 3), "map.txt")
+
+
+
+
+}
+
+2.
+
+
+
+class Student:
+    def __init__(self, nume, stare="fericit"):
+        self.nume=nume
+        self.stare=stare
+
+    def change_state(self, stare_noua):
+        print(self.nume, "si a schimbat starea din", self.stare, "in", stare_noua)
+
+        self.stare=stare_noua
+
+
+class Command:
+    def executa(self):
+        raise NotImplementedError("metoda trb implementata")
+    
+class Fericit(Command):
+    def __init__(self,student):
+        self.student=student
+
+    def executa(self):
+        self.student.change_state("fericit")
+
+    
+class Disperat(Command):
+    def __init__(self, student):
+        self.student=student
+
+    def executa(self):
+        self.student.change_state("Disperat")
+
+
+class Trist(Command):
+
+    def __init__(self, student):
+        self.student = student
+
+    def executa(self):
+        self.student.change_state("Trist")
+
+
+class Colega:
+    def trimiteComanda(self,comanda):
+        comanda.executa()
+
+
+if __name__ == "__main__":
+     
+     colega=Colega()
+
+     student1=Student("Ion", "Fericit")
+     student2=Student("Marius", "TRist")
+     student3=Student("Mihai", "OK")
+
+     comanda1=Disperat(student1)
+     comanda2=Fericit(student2)
+     comanda3=Trist(student3)
+
+     colega.trimiteComanda(comanda1)
+     colega.trimiteComanda(comanda2)
+     colega.trimiteComanda(comanda3)
+
+
+
+SV76
+Kotlin: Utilizand Kotlin si OOP sa se creeze un program care permite modelarea unei sali de laborator cu tot cu operatrii pentru obiecte. Se vor folosi liste mutabile. Se va desena diagrama UML(clase si obiect). Se va explica maniera de aplicare a principiilor SOLID.
+
+Python: utilizand modelul pod pot sa se scrue un program Python care va desena in mod grafic un triunghi, un cerc si un dreptunghi. Se vor desena diagrame de clase si de obiecte. Se va explica maniera de aplicare a principiilor SOLID
+
+1.
+
+package org.example
+
+class Calculator(
+        var marca: String,
+        var procesor: String,
+        var memorieRam: Int)
+
+{
+    fun afisare()
+    {
+        println("Calculator: marca=$marca, procesor=$procesor, RAM=$memorieRam GB")
+
+    }
+}
+
+class Scaun(
+    var culoare: String,
+    var material: String
+)
+{
+    fun afisare()
+    {
+        println("Scaun: culoare=$culoare, material=$material")
+    }
+
+}
+
+class Birou(
+    var culoare: String,
+    var lungime: Int,
+    var latime: Int
+)
+
+{
+    fun afisare()
+    {
+        println("Birou: culoare=$culoare, lungime=$lungime, latime=$latime cm")
+    }
+}
+
+class Laborator(
+    //val - valoare constanta
+    val nume: String,
+    val capacitate: Int
+)
+{
+    private val calculatoare=mutableListOf<Calculator>()
+    private val scaune=mutableListOf<Scaun>()
+    private val birouri=mutableListOf<Birou>()
+
+    fun adaugaCalculator(calculator: Calculator)
+    {
+        if(calculatoare.size <capacitate) {
+            calculatoare.add(calculator)
+            println("Calculator adaugat")
+        }
+        else
+        {
+            println("nu mai este loc")
+        }
+
+    }
+
+    fun adaugaScaun(scaun: Scaun)
+    {
+        if(scaune.size<capacitate)
+        {
+            scaune.add(scaun)
+            println("Scaun adaugat")
+        }
+        else
+        {
+            println("nu mai este loc")
+        }
+    }
+
+    fun adaugaBirou(birou:Birou)
+    {
+        if(birouri.size<capacitate)
+        {
+            birouri.add(birou)
+            println("Birou adaugat")
+        }
+        else
+        {
+            println("nu mai este loc")
+        }
+    }
+
+    fun stergeCalculator(calculator: Calculator)
+    {
+        if(calculatoare.size == 0)
+        {
+            println("Nu exista calculatoare.")
+        }
+        else if(calculatoare.contains(calculator))
+        {
+            calculatoare.remove(calculator)
+            println("Calculator sters.")
+        }
+        else
+        {
+            println("Calculatorul cautat nu exista.")
+        }
+    }
+
+    fun stergeScaun(scaun: Scaun)
+    {
+        if(scaune.size==0)
+        {
+            println("nu exista scaune")
+        }
+        else if(scaune.contains(scaun))
+        {
+            scaune.remove(scaun)
+            println("scaun sters")
+        }
+        else
+        {
+            println("scaunul cautat nu exista")
+        }
+    }
+
+    fun stergeBirou(birou: Birou) {
+        if (birouri.size == 0) {
+            println("Nu exista birouri.")
+        }
+        else if (birouri.contains(birou)) {
+            birouri.remove(birou)
+            println("Birou sters.")
+        }
+        else {
+            println("Biroul cautat nu exista.")
+        }
+    }
+
+    fun afisareLaborator()
+    {
+        println("Laborator: $nume")
+        println("Capacitate: $capacitate")
+
+        println("Lista calculatoare: ")
+        calculatoare.forEach{ it.afisare()}
+
+        println("lista Scaune")
+        scaune.forEach{ it.afisare()}
+
+        println("Lista birouri: ")
+        birouri.forEach{ it.afisare()}
+    }
+
+}
+
+fun main()
+{
+    val laborator=Laborator("L1", 5)
+    val c1=Calculator("Dell","Intel i5", 16)
+    val c2 = Calculator("HP", "Intel i7", 32)
+
+    val s1 = Scaun("Negru", "Plastic")
+    val s2 = Scaun("Albastru", "Metal")
+
+    val b1 = Birou("Alb", 120, 60)
+    val b2 = Birou("Maro", 100, 50)
+
+    laborator.adaugaCalculator(c1)
+    laborator.adaugaCalculator(c2)
+
+    laborator.adaugaScaun(s1)
+    laborator.adaugaScaun(s2)
+
+    laborator.adaugaBirou(b1)
+    laborator.adaugaBirou(b2)
+
+    laborator.stergeScaun(s2)
+
+    laborator.afisareLaborator()
+
+
+}
+
+2.
+
+
+
+
+# Importam biblioteca tkinter.
+# Ea ne permite sa cream ferestre si butoane.
+from tkinter import *
+
+
+# =====================================================
+# PRODUS ABSTRACT
+# =====================================================
+
+# LanguageButton este clasa de baza.
+# Ea mosteneste Button din tkinter.
+#
+# Deci orice LanguageButton este un buton.
+class LanguageButton(Button):
+
+    # Metoda care va fi implementata
+    # de clasele copil.
+    #
+    # self = obiectul curent
+    # language = limba care trebuie setata
+    def setLanguage(self, language: str):
+        pass
+
+
+# =====================================================
+# PRODUSE CONCRETE
+# =====================================================
+
+# Buton pentru limba engleza.
+class English(LanguageButton):
+
+    def setLanguage(self, language: str):
+
+        # config() modifica proprietatile butonului.
+        # text este eticheta care apare pe buton.
+        self.config(text="English")
+
+
+# Buton pentru limba romana.
+class Romanian(LanguageButton):
+
+    def setLanguage(self, language: str):
+
+        # Pe buton va scrie Romanian.
+        self.config(text="Romanian")
+
+
+# Buton pentru limba franceza.
+class French(LanguageButton):
+
+    def setLanguage(self, language: str):
+
+        # Pe buton va scrie French.
+        self.config(text="French")
+
+
+# =====================================================
+# FABRICA ABSTRACTA
+# =====================================================
+
+# Clasa de baza pentru toate fabricile.
+#
+# Orice fabrica trebuie sa stie
+# sa creeze un buton.
+class AbstractFactory:
+
+    def getButton(
+            self,
+            root,
+            language: str
+    ) -> LanguageButton:
+
+        pass
+
+
+# =====================================================
+# FABRICA PENTRU LIMBI LATINE
+# =====================================================
+
+class LatinFactory(AbstractFactory):
+
+    def getButton(
+            self,
+            root,
+            language: str
+    ) -> LanguageButton:
+
+        # Daca vrem un buton romanesc.
+        if language == "Romanian":
+
+            # Cream butonul.
+            button = Romanian(root)
+
+            # Ii setam limba.
+            button.setLanguage(language)
+
+            # Returnam butonul.
+            return button
+
+        # Daca vrem un buton francez.
+        elif language == "French":
+
+            button = French(root)
+
+            button.setLanguage(language)
+
+            return button
+
+
+# =====================================================
+# FABRICA PENTRU LIMBI GERMANICE
+# =====================================================
+
+class GermanFactory(AbstractFactory):
+
+    def getButton(
+            self,
+            root,
+            language: str
+    ) -> LanguageButton:
+
+        if language == "English":
+
+            button = English(root)
+
+            button.setLanguage(language)
+
+            return button
+
+
+# =====================================================
+# FABRICA DE FABRICI
+# =====================================================
+
+# Aceasta clasa nu creeaza butoane.
+#
+# Ea creeaza fabrici.
+class FactoryFactory:
+
+    def getFactory(
+            self,
+            factoryName: str
+    ) -> AbstractFactory:
+
+        # Returneaza fabrica latina.
+        if factoryName == "latin":
+
+            return LatinFactory()
+
+        # Returneaza fabrica germanica.
+        elif factoryName == "germanic":
+
+            return GermanFactory()
+
+
+# =====================================================
+# MAIN
+# =====================================================
+
+if __name__ == "__main__":
+
+    # Cream fereastra principala.
+    root = Tk()
+
+    # Titlul ferestrei.
+    root.title(
+        "Fabrica de fabrici"
+    )
+
+    # Dimensiunea ferestrei.
+    root.geometry(
+        "330x180"
+    )
+
+    # Cream fabrica de fabrici.
+    factoryFactory = FactoryFactory()
+
+    # Cerem fabrica latina.
+    latinFactory = factoryFactory.getFactory(
+        "latin"
+    )
+
+    # Cerem fabrica germanica.
+    germanFactory = factoryFactory.getFactory(
+        "germanic"
+    )
+
+    # Cerem un buton romanesc.
+    b1 = latinFactory.getButton(
+        root,
+        "Romanian"
+    )
+
+    # Afisam butonul.
+    b1.pack(
+        pady=10
+    )
+
+    # Cerem un buton francez.
+    b2 = latinFactory.getButton(
+        root,
+        "French"
+    )
+
+    b2.pack(
+        pady=10
+    )
+
+    # Cerem un buton englezesc.
+    b3 = germanFactory.getButton(
+        root,
+        "English"
+    )
+
+    b3.pack(
+        pady=10
+    )
+
+    # Tine fereastra deschisa.
+    root.mainloop()
+
+
+SV 86
+Kotlin: Utilizand modelul observtor sa se creeze in pentru un obiect de tip recalculare a pretului, in functie de niste rate de reducere introduse extern de la tastatura ( prin intermediul unui model proxy cu validare de user, parola), un logger (scriere automata in jurnal a operatiilor), care va scrie intr-un fisier separat user si data la care a fost efectuata modificarea de pret si ce modificare a fost realizata) Se vor desena diagrama de clase si de obiecte. Se va explica maniera de aplicare a principiilor SOLID.
+
+Python: Utilizand fabrica de fabrici sa se creeze un program Python care in functie de limba selectata in apel sa intoarca un buton a carui eticheta sa fie in limba selectata la apel si apoi sa fie afisat pe ecran utilizand tkinter. Se vor desena diagrama de clase si de obiecte. Se va explica maniera SOLID.
+
+
+1.
+
+package org.example
+
+import java.io.File
+import java.text.SimpleDateFormat
+import java.util.Date
+
+//orice observer trb sa aiba metoda update()
+interface Observer{
+    fun update(user:String, pretVechi: Double, pretNou: Double, reducere:Double)
+
+}
+
+
+//tine doar valoarea pretului
+class Pret(private var valoare: Double)
+{
+    fun modificarePret(reducere:Double)
+    {
+        valoare-=valoare*reducere/100
+    }
+    fun getPret(): Double
+    {
+        return valoare
+    }
+}
+
+//subject in modelul observer
+//1.modifica pretul
+//2. anunta observerii
+
+class RecalcularePret(private val pret: Pret)
+{
+    private val observers: MutableList<Observer> = mutableListOf()
+    fun attach(observer: Observer)
+    {
+        observers.add(observer)
+    }
+
+    fun detach(observer: Observer)
+    {
+        observers.remove(observer)
+    }
+    private fun notifyObservers(user:String, pretVechi:Double, pretNou: Double, reducere: Double)
+    {
+        for(observer in observers)
+        {
+            observer.update(user,pretVechi,pretNou,reducere)
+        }
+    }
+
+    fun recalcularePret(user:String, reducere:Double)
+    {
+        val pretVechi=pret.getPret()
+
+        pret.modificarePret(reducere)
+        val pretNou=pret.getPret()
+
+        notifyObservers(user, pretVechi, pretNou, reducere)
+    }
+}
+//logger=observer concret
+//primeste update si scrie in fisier
+
+class Logger: Observer{
+    private val fisierLog="log.txt"
+
+    override fun update(user:String, pretVechi: Double, pretNou:Double, reducere:Double) {
+        val data = SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(Date())
+
+        val file = File(fisierLog)
+        file.appendText("Data: $data\n")
+        file.appendText("User: $user\n")
+        file.appendText("reducere aplicata: $reducere\n")
+        file.appendText("Pret vechi: $pretVechi\n")
+        file.appendText("Pret nou: $pretNou\n")
+
+
+
+    }
+
+
+}
+
+//un fel de paznic
+//nu lasa pe orcine sa modifice pretul
+class UserProxy(
+    private val realSubject: RecalcularePret,
+    private val user: String,
+    private val parola: String
+)
+{
+    private val userCorect = "admin"
+    private val parolaCorecta = "admin123"
+
+    private fun validate(): Boolean
+    {
+        if (user == userCorect &&
+            parola == parolaCorecta)
+        {
+            println("Autentificare reusita.")
+            return true
+        }
+        else
+        {
+            println("Autentificare esuata.")
+            return false
+        }
+    }
+
+    fun recalculeazaPret(reducere: Double)
+    {
+        if (validate())
+        {
+            realSubject.recalcularePret(user, reducere)
+
+            println("Pret recalculat cu succes.")
+        }
+    }
+}
+// Citeste reducerea de la tastatura.
+class RateDeReducere
+{
+    fun introducereRate(): Double
+    {
+        println(
+            "Introduceti rata de reducere:"
+        )
+
+        return readLine()
+            ?.toDoubleOrNull()
+            ?: 0.0
+    }
+}
+
+fun main()
+{
+    val pret=Pret(100.0)
+    val recalcularePret=RecalcularePret(pret)
+    val logger=Logger()
+
+    recalcularePret.attach(logger)
+    println("Introduceti user:")
+    val user=readLine() ?:""
+
+    println("Introduceti parola: ")
+    val parola=readLine()?:""
+
+    val proxy=UserProxy(recalcularePret, user,parola)
+
+    val rate=RateDeReducere()
+
+    val reducere=rate.introducereRate()
+
+    proxy.recalculeazaPret(reducere)
+
+}
+
+2.
+
+
+
+# Importam biblioteca tkinter.
+# Ea ne permite sa cream ferestre si butoane.
+from tkinter import *
+
+
+# =====================================================
+# PRODUS ABSTRACT
+# =====================================================
+
+# LanguageButton este clasa de baza.
+# Ea mosteneste Button din tkinter.
+#
+# Deci orice LanguageButton este un buton.
+class LanguageButton(Button):
+
+    # Metoda care va fi implementata
+    # de clasele copil.
+    #
+    # self = obiectul curent
+    # language = limba care trebuie setata
+    def setLanguage(self, language: str):
+        pass
+
+
+# =====================================================
+# PRODUSE CONCRETE
+# =====================================================
+
+# Buton pentru limba engleza.
+class English(LanguageButton):
+
+    def setLanguage(self, language: str):
+
+        # config() modifica proprietatile butonului.
+        # text este eticheta care apare pe buton.
+        self.config(text="English")
+
+
+# Buton pentru limba romana.
+class Romanian(LanguageButton):
+
+    def setLanguage(self, language: str):
+
+        # Pe buton va scrie Romanian.
+        self.config(text="Romanian")
+
+
+# Buton pentru limba franceza.
+class French(LanguageButton):
+
+    def setLanguage(self, language: str):
+
+        # Pe buton va scrie French.
+        self.config(text="French")
+
+
+# =====================================================
+# FABRICA ABSTRACTA
+# =====================================================
+
+# Clasa de baza pentru toate fabricile.
+#
+# Orice fabrica trebuie sa stie
+# sa creeze un buton.
+class AbstractFactory:
+
+    def getButton(
+            self,
+            root,
+            language: str
+    ) -> LanguageButton:
+
+        pass
+
+
+# =====================================================
+# FABRICA PENTRU LIMBI LATINE
+# =====================================================
+
+class LatinFactory(AbstractFactory):
+
+    def getButton(
+            self,
+            root,
+            language: str
+    ) -> LanguageButton:
+
+        # Daca vrem un buton romanesc.
+        if language == "Romanian":
+
+            # Cream butonul.
+            button = Romanian(root)
+
+            # Ii setam limba.
+            button.setLanguage(language)
+
+            # Returnam butonul.
+            return button
+
+        # Daca vrem un buton francez.
+        elif language == "French":
+
+            button = French(root)
+
+            button.setLanguage(language)
+
+            return button
+
+
+# =====================================================
+# FABRICA PENTRU LIMBI GERMANICE
+# =====================================================
+
+class GermanFactory(AbstractFactory):
+
+    def getButton(
+            self,
+            root,
+            language: str
+    ) -> LanguageButton:
+
+        if language == "English":
+
+            button = English(root)
+
+            button.setLanguage(language)
+
+            return button
+
+
+# =====================================================
+# FABRICA DE FABRICI
+# =====================================================
+
+# Aceasta clasa nu creeaza butoane.
+#
+# Ea creeaza fabrici.
+class FactoryFactory:
+
+    def getFactory(
+            self,
+            factoryName: str
+    ) -> AbstractFactory:
+
+        # Returneaza fabrica latina.
+        if factoryName == "latin":
+
+            return LatinFactory()
+
+        # Returneaza fabrica germanica.
+        elif factoryName == "germanic":
+
+            return GermanFactory()
+
+
+# =====================================================
+# MAIN
+# =====================================================
+
+if __name__ == "__main__":
+
+    # Cream fereastra principala.
+    root = Tk()
+
+    # Titlul ferestrei.
+    root.title(
+        "Fabrica de fabrici"
+    )
+
+    # Dimensiunea ferestrei.
+    root.geometry(
+        "330x180"
+    )
+
+    # Cream fabrica de fabrici.
+    factoryFactory = FactoryFactory()
+
+    # Cerem fabrica latina.
+    latinFactory = factoryFactory.getFactory(
+        "latin"
+    )
+
+    # Cerem fabrica germanica.
+    germanFactory = factoryFactory.getFactory(
+        "germanic"
+    )
+
+    # Cerem un buton romanesc.
+    b1 = latinFactory.getButton(
+        root,
+        "Romanian"
+    )
+
+    # Afisam butonul.
+    b1.pack(
+        pady=10
+    )
+
+    # Cerem un buton francez.
+    b2 = latinFactory.getButton(
+        root,
+        "French"
+    )
+
+    b2.pack(
+        pady=10
+    )
+
+    # Cerem un buton englezesc.
+    b3 = germanFactory.getButton(
+        root,
+        "English"
+    )
+
+    b3.pack(
+        pady=10
+    )
+
+    # Tine fereastra deschisa.
+    root.mainloop()
+
+
+
+SV108
+Kotlin: Sa se realizeze un program Kotlin care va aplcia memoizarea generalizata pentru calculul f(i) = f(i -1) + f( i - 2) utilizand concurent hasmap
+Python: Utilizand modelul lant de responsabilitati si nivelul de alerta [0..5] sa se creeze un program Python care va distribui un mesaj( primit la intrare impreuna cu nivelul lui) pentru a fi tratat(afisat) in zona potrivita ( e.g 5-paznici muzee, 4-politie, 3-sri, 2-sie, 1-csat, 0-nato). Se vor desena diagrama de clase si de obiecte. Se va explica maniera de aplicare a principiilor SOLID.
+
+
+1.  
+
+
+
+package com.pp.laborator
+
+// Importam ConcurrentHashMap
+// Acesta este un container de tip cheie-valoare
+// in care memoram rezultatele deja calculate
+import java.util.concurrent.ConcurrentHashMap
+
+
+// Cream un cache (memorie)
+// Cheia = n
+// Valoarea = fibonacci(n)
+val cache = ConcurrentHashMap<Int, Int>()
+
+
+// Functia fibonacci
+// Primeste un numar intreg n
+// Returneaza un numar intreg
+fun fibonacci(n: Int): Int =
+
+    // getOrPut face urmatorul lucru:
+    //
+    // Daca cheia n exista in cache
+    //      returneaza valoarea memorata
+    //
+    // Daca cheia n nu exista
+    //      executa blocul de cod de mai jos
+    //      memoreaza rezultatul
+    //      returneaza rezultatul
+    cache.getOrPut(n)
+    {
+        // Verificam cazurile de baza
+        when(n)
+        {
+            // f(0)=0
+            0 -> 0
+
+            // f(1)=1
+            1 -> 1
+
+            // Formula recursiva
+            // f(n)=f(n-1)+f(n-2)
+            else -> fibonacci(n - 1) + fibonacci(n - 2)
+        }
+    }
+
+
+// Programul principal
+fun main()
+{
+    // Calculam fibonacci(6)
+    println(fibonacci(6))
+} 
+
+
+
+2.
+
+class Handler:
+    def __init__(self, nextHandler=None):
+        # urmatorul handler din lant
+        self.nextHandler = nextHandler
+
+    def process(self, message: str, level: int):
+        # metoda va fi suprascrisa in clasele copil
+        pass
+
+
+# handler pentru Gardianul muzeului - nivel 5
+class GardianHandler(Handler):
+    def process(self, message: str, level: int):
+        print("Cererea a fost inregistrata ->", message)
+
+        if level == 5:
+            print("Gardianul muzeului a procesat cererea:", message)
+        else:
+            if self.nextHandler is not None:
+                print("Gardianul a pasat cererea")
+                self.nextHandler.process(message, level)
+            else:
+                print("Cerere invalida!")
+
+
+# handler pentru Politie - nivel 4
+class PoliceHandler(Handler):
+    def process(self, message: str, level: int):
+        if level == 4:
+            print("Politia a procesat cererea:", message)
+        else:
+            if self.nextHandler is not None:
+                print("Politia a pasat cererea")
+                self.nextHandler.process(message, level)
+            else:
+                print("Cerere invalida!")
+
+
+# handler pentru SRI - nivel 3
+class SRIHandler(Handler):
+    def process(self, message: str, level: int):
+        if level == 3:
+            print("SRI a procesat cererea:", message)
+        else:
+            if self.nextHandler is not None:
+                print("SRI a pasat cererea")
+                self.nextHandler.process(message, level)
+            else:
+                print("Cerere invalida!")
+
+
+# handler pentru SIE - nivel 2
+class SIEHandler(Handler):
+    def process(self, message: str, level: int):
+        if level == 2:
+            print("SIE a procesat cererea:", message)
+        else:
+            if self.nextHandler is not None:
+                print("SIE a pasat cererea")
+                self.nextHandler.process(message, level)
+            else:
+                print("Cerere invalida!")
+
+
+# handler pentru CSAT - nivel 1
+class CSATHandler(Handler):
+    def process(self, message: str, level: int):
+        if level == 1:
+            print("CSAT a procesat cererea:", message)
+        else:
+            if self.nextHandler is not None:
+                print("CSAT a pasat cererea")
+                self.nextHandler.process(message, level)
+            else:
+                print("Cerere invalida!")
+
+
+# handler pentru NATO - nivel 0
+class NATOHandler(Handler):
+    def process(self, message: str, level: int):
+        if level == 0:
+            print("NATO a procesat cererea:", message)
+        else:
+            if self.nextHandler is not None:
+                print("NATO a pasat cererea")
+                self.nextHandler.process(message, level)
+            else:
+                print("Cerere invalida!")
+
+
+if __name__ == "__main__":
+    # Construim lantul invers:
+    # Gardian -> Politie -> SRI -> SIE -> CSAT -> NATO
+
+    nato = NATOHandler(None)
+    csat = CSATHandler(nato)
+    sie = SIEHandler(csat)
+    sri = SRIHandler(sie)
+    politie = PoliceHandler(sri)
+    gardian = GardianHandler(politie)
+
+    gardian.process("Atac cu mitraliere", 0)
+    print()
+    gardian.process("Atac armat", 2)
+    print()
+    gardian.process("Alerta muzeu", 5)
+
 ```
