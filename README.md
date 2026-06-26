@@ -1,3 +1,4 @@
+```
 SV30
 
 Kot34 - Utilizând să se scrie un program Kotlin care preia un fișier text (scris de programator) la intrare, organizează cuvintele într-un arbore binar utilizând o constrângere la alegere, iar apoi cu ajutorul unei clase specifice și al funcțiilor va afișa porțiuni din arbore.
@@ -2928,3 +2929,4 @@ if __name__ == "__main__":
     box.volume(5)
 
     box.battery_status()
+```
